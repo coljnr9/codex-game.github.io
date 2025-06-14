@@ -19,6 +19,12 @@ test('fluid.mjs syntax is valid', () => {
   execSync(`node --check ${path.join(__dirname, '..', 'fluid.mjs')}`);
 });
 
+test('main.js defines whale and fish helpers', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+  assert(src.includes('makeWhale'));
+  assert(src.includes('makeFish'));
+});
+
   test('main.js initializes without DOM errors', async () => {
     const ctxStub = {
       setTransform() {},
