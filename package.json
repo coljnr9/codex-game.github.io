@@ -1,0 +1,13 @@
+{
+  "name": "codex-game.github.io",
+  "version": "1.0.0",
+  "description": "This repository contains a simple WebGPU based demo used for the Codex Game GitHub Pages site. The demo renders a small animated water scene.",
+  "main": "main.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
