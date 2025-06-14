@@ -15,6 +15,10 @@ test('main.js syntax is valid', () => {
   execSync(`node --check ${path.join(__dirname, '..', 'main.js')}`);
 });
 
+test('fluid.mjs syntax is valid', () => {
+  execSync(`node --check ${path.join(__dirname, '..', 'fluid.mjs')}`);
+});
+
   test('main.js initializes without DOM errors', async () => {
     const ctxStub = {
       setTransform() {},

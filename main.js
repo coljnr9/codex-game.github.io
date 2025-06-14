@@ -5,6 +5,7 @@ async function init() {
   const { Scene, PerspectiveCamera, WebGLRenderer, Color, DirectionalLight,
           PlaneGeometry, ConeGeometry, MeshLambertMaterial,
           MeshPhongMaterial, Mesh } = THREE;
+  const { Fluid } = await import('./fluid.mjs');
 
   const canvas = document.getElementById('gfx');
   const renderer = new WebGLRenderer({ canvas, antialias: true });
@@ -38,7 +39,8 @@ async function init() {
   scene.add(makeMountain(0, -4, 6));
   scene.add(makeMountain(5, -3, 4));
 
-  const waterGeo = new PlaneGeometry(20, 5, 60, 10);
+  const gridSize = 50;
+  const waterGeo = new PlaneGeometry(20, 20, gridSize, gridSize);
   const waterMat = new MeshPhongMaterial({
     color: 0x3377ff,
     transparent: true,
@@ -49,6 +51,8 @@ async function init() {
   water.rotation.x = -Math.PI / 2;
   water.position.z = 2;
   scene.add(water);
+
+  const fluid = new Fluid(gridSize);
 
   function resize() {
     const width = canvas.clientWidth || 300;
@@ -62,11 +66,17 @@ async function init() {
 
   function animate(time) {
     requestAnimationFrame(animate);
+    const center = Math.floor(gridSize / 2);
+    fluid.addDensity(center, center, Math.sin(time * 0.002) * 0.05);
+    fluid.step();
+
     const pos = water.geometry.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const y = Math.sin(x * 0.5 + time * 0.001) * 0.1;
-      pos.setZ(i, y);
+    for (let i = 0; i <= gridSize; i++) {
+      for (let j = 0; j <= gridSize; j++) {
+        const idx = j * (gridSize + 1) + i;
+        const h = fluid.density[fluid.IX(i, j)];
+        pos.setZ(idx, h);
+      }
     }
     pos.needsUpdate = true;
     renderer.render(scene, camera);
