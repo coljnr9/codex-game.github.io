@@ -41,11 +41,33 @@ async function init() {
   scene.add(makeMountain(0, -4, 6));
   scene.add(makeMountain(5, -3, 4));
 
+  function makeWhale() {
+    const whale = new Group();
+    const bodyGeo = new BoxGeometry(1.5, 0.6, 0.6);
+    const bodyMat = new MeshLambertMaterial({ color: 0x444466 });
+    const body = new Mesh(bodyGeo, bodyMat);
+    whale.add(body);
+    const tailGeo = new BoxGeometry(0.4, 0.2, 0.2);
+    const tail = new Mesh(tailGeo, bodyMat);
+    tail.position.set(-0.9, 0, 0);
+    whale.add(tail);
+    return whale;
+  }
+
+  function makeFish(color = 0xff5533) {
+    const geo = new BoxGeometry(0.3, 0.1, 0.1);
+    const mat = new MeshLambertMaterial({ color });
+    return new Mesh(geo, mat);
+  }
+
   const gridSize = 50;
   const waterDepth = 0.1;
   const waterGroup = new Group();
   waterGroup.position.z = 2;
   scene.add(waterGroup);
+
+  const whales = [];
+  const fishes = [];
 
   const waterVolumeGeo = new BoxGeometry(20, waterDepth, 20);
   const waterVolumeMat = new MeshPhongMaterial({
@@ -84,6 +106,20 @@ async function init() {
   foam.rotation.x = -Math.PI / 2;
   foam.position.y = waterDepth + 0.01;
   waterGroup.add(foam);
+
+  const whale = makeWhale();
+  whale.position.y = waterDepth + 0.3;
+  waterGroup.add(whale);
+  whales.push(whale);
+
+  for (let i = 0; i < 5; i++) {
+    const fish = makeFish();
+    fish.position.set((Math.random() - 0.5) * 8, waterDepth + 0.1,
+                      (Math.random() - 0.5) * 4);
+    fish.userData.vx = 0.02 * (Math.random() - 0.5);
+    waterGroup.add(fish);
+    fishes.push(fish);
+  }
 
   const fluid = new Fluid(gridSize);
 
@@ -126,6 +162,15 @@ async function init() {
     foamPos.needsUpdate = true;
     foam.geometry.dispose();
     foam.geometry = new EdgesGeometry(foamPlane);
+
+    for (const w of whales) {
+      w.position.x = Math.sin(time * 0.001) * 5;
+    }
+
+    for (const f of fishes) {
+      f.position.x += f.userData.vx;
+      if (f.position.x > 10 || f.position.x < -10) f.userData.vx *= -1;
+    }
 
     water.visible = false;
     cubeCamera.update(renderer, scene);
