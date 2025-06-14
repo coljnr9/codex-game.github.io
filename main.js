@@ -9,7 +9,11 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
-resize();
+
+window.addEventListener('DOMContentLoaded', () => {
+  resize();
+  requestAnimationFrame(frame);
+});
 
 let time = 0;
 
@@ -37,4 +41,3 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-window.addEventListener('DOMContentLoaded', () => requestAnimationFrame(frame));
