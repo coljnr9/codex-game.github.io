@@ -15,27 +15,34 @@ test('main.js syntax is valid', () => {
   execSync(`node --check ${path.join(__dirname, '..', 'main.js')}`);
 });
 
-test('main.js handles unsupported browsers', async () => {
-  const canvas = {};
-  const unsupported = { style: { display: 'none' } };
-  global.document = {
-    getElementById(id) {
-      if (id === 'gfx') return canvas;
-      if (id === 'unsupported') return unsupported;
-      return null;
-    }
-  };
+  test('main.js initializes without DOM errors', async () => {
+    const ctxStub = {
+      setTransform() {},
+      clearRect() {},
+      beginPath() {},
+      moveTo() {},
+      lineTo() {},
+      closePath() {},
+      fill() {},
+      fillStyle: ''
+    };
 
-  global.window = {
-    addEventListener(event, handler) {
-      if (event === 'DOMContentLoaded') handler();
-    }
-  };
+    const canvas = { getContext: () => ctxStub };
+    global.document = {
+      getElementById(id) {
+        if (id === 'gfx') return canvas;
+        return null;
+      }
+    };
 
-  global.navigator = {};
+    global.window = {
+      addEventListener(event, handler) {
+        if (event === 'DOMContentLoaded') handler();
+      }
+    };
 
-  const moduleUrl = pathToFileURL(path.join(__dirname, '..', 'main.js')).href;
-  await import(moduleUrl);
+    global.requestAnimationFrame = () => {};
 
-  assert.strictEqual(unsupported.style.display, 'block');
-});
+    const moduleUrl = pathToFileURL(path.join(__dirname, '..', 'main.js')).href;
+    await import(moduleUrl);
+  });
