@@ -3,8 +3,10 @@ async function init() {
   if (typeof document === 'undefined' || !document.createElement) return;
   const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js');
   const { Scene, PerspectiveCamera, WebGLRenderer, Color, DirectionalLight,
-          PlaneGeometry, ConeGeometry, MeshLambertMaterial,
-          MeshPhongMaterial, Mesh } = THREE;
+          PlaneGeometry, BoxGeometry, ConeGeometry, MeshLambertMaterial,
+          MeshPhongMaterial, Mesh, Group, CubeCamera,
+          WebGLCubeRenderTarget, LineSegments, EdgesGeometry,
+          LineBasicMaterial } = THREE;
   const { Fluid } = await import('./fluid.mjs');
 
   const canvas = document.getElementById('gfx');
@@ -40,17 +42,48 @@ async function init() {
   scene.add(makeMountain(5, -3, 4));
 
   const gridSize = 50;
+  const waterDepth = 0.1;
+  const waterGroup = new Group();
+  waterGroup.position.z = 2;
+  scene.add(waterGroup);
+
+  const waterVolumeGeo = new BoxGeometry(20, waterDepth, 20);
+  const waterVolumeMat = new MeshPhongMaterial({
+    color: 0x3377ff,
+    transparent: true,
+    opacity: 0.5,
+  });
+  const waterVolume = new Mesh(waterVolumeGeo, waterVolumeMat);
+  waterVolume.position.y = waterDepth / 2;
+  waterGroup.add(waterVolume);
+
+  const cubeRT = new WebGLCubeRenderTarget(128);
+  const cubeCamera = new CubeCamera(0.1, 100, cubeRT);
+  cubeCamera.position.y = waterDepth + 0.01;
+  waterGroup.add(cubeCamera);
+
   const waterGeo = new PlaneGeometry(20, 20, gridSize, gridSize);
   const waterMat = new MeshPhongMaterial({
     color: 0x3377ff,
     transparent: true,
     opacity: 0.8,
+    shininess: 100,
     side: THREE.DoubleSide,
+    envMap: cubeRT.texture,
+    reflectivity: 0.6,
   });
   const water = new Mesh(waterGeo, waterMat);
   water.rotation.x = -Math.PI / 2;
-  water.position.z = 2;
-  scene.add(water);
+  water.position.y = waterDepth;
+  waterGroup.add(water);
+
+  const foamPlane = new PlaneGeometry(20, 20, 1, 1);
+  const foamEdges = new EdgesGeometry(foamPlane);
+  const foamMat = new LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+  const foam = new LineSegments(foamEdges, foamMat);
+  foam.rotation.x = -Math.PI / 2;
+  foam.position.y = waterDepth + 0.01;
+  waterGroup.add(foam);
 
   const fluid = new Fluid(gridSize);
 
@@ -79,6 +112,25 @@ async function init() {
       }
     }
     pos.needsUpdate = true;
+
+    // match foam corners to water surface
+    const foamPos = foamPlane.attributes.position;
+    const topLeft = pos.getZ((gridSize + 1) * gridSize);
+    const topRight = pos.getZ((gridSize + 1) * gridSize + gridSize);
+    const bottomLeft = pos.getZ(0);
+    const bottomRight = pos.getZ(gridSize);
+    foamPos.setZ(0, bottomLeft);
+    foamPos.setZ(1, bottomRight);
+    foamPos.setZ(2, topLeft);
+    foamPos.setZ(3, topRight);
+    foamPos.needsUpdate = true;
+    foam.geometry.dispose();
+    foam.geometry = new EdgesGeometry(foamPlane);
+
+    water.visible = false;
+    cubeCamera.update(renderer, scene);
+    water.visible = true;
+
     renderer.render(scene, camera);
   }
 
