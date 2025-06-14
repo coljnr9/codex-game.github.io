@@ -1,4 +1,7 @@
-# codex-game.github.io
+# Codex World Explorer
 
-This repository hosts the source for the Codex Game landing page which is
-published using [GitHub Pages](https://pages.github.com/).
+This repository contains a simple WebGPU based demo used for the Codex Game GitHub Pages site.
+The demo renders a small animated water scene.
+
+To run locally, open `index.html` in a browser that supports WebGPU (for example
+Chrome Canary with the `--enable-unsafe-webgpu` flag).
